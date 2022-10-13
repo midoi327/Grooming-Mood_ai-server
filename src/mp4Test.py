@@ -20,7 +20,7 @@ def videocapture(filepath):
       break
     if(int(input_video.get(1)) % 60 == 0): #프레임 60 당 이미지 1개 캡쳐
         frame = cv.resize(frame, (48, 48))
-        cv.imwrite("C:/Users/imreo/face_sentiment_flask/src/dataset/FrameTest/%d.jpg" % count, frame) #이미지 저장
+        cv.imwrite("C:/Users/imreo/gromming-mood-flask/src/dataset/FrameTest/%d.jpg" % count, frame) #이미지 저장
         print('Saved frame %d.jpg' %count)
         count +=1
     
@@ -34,7 +34,7 @@ def predfunction(img):
   img = color.rgb2gray(img)
   img = img.reshape(-1, 48, 48, 1)
 
-  model = tf.keras.models.load_model('C:/Users/imreo/face_sentiment_flask/src/cpu_face_model.h5')
+  model = tf.keras.models.load_model('C:/Users/imreo/gromming-mood-flask/src/cpu_face_model.h5')
   prediction = model.predict(img)
 
   result['prob'] = max(max(prediction))
@@ -55,11 +55,11 @@ count = 0
 maxEmotion = {}
 init = 0
 
-file = "C:/Users/imreo/face_sentiment_flask/src/dataset/Facetest.mp4"  #동영상 파일 경로가 있어야함
+file = "C:/Users/imreo/gromming-mood-flask/src/dataset/Facetest.mp4"  #동영상 파일 경로가 있어야함
 count = videocapture(file) #프레임 캡쳐 후 캡쳐 이미지 개수 반환
 
 for i in range(count):
-    img = img = "C:/Users/imreo/face_sentiment_flask/src/dataset/FrameTest/"+str(i)+".jpg" #캡쳐본 파일 경로
+    img = "C:/Users/imreo/gromming-mood-flask/src/dataset/FrameTest/"+str(i)+".jpg" #캡쳐본 파일 경로
     pred = predfunction(img)
 
     if pred['prob'] > init:

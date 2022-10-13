@@ -11,6 +11,7 @@ from os.path import join
 
 filepath = "src/dataset/WaveTest/audioTest.wav"
 
+#wav 파일로부터 mfcc 특징벡터를 추출하는 함수
 def extract_mfcc_feature(file_name):
     audio_signal, sample_rate = librosa.load(file_name, sr=22050)
     spectrogram = librosa.stft(audio_signal, n_fft=512)
@@ -27,29 +28,29 @@ def extract_mfcc_feature(file_name):
 
 
 
-
-#음성 파일 4초씩 잘라서 저장하기 
+#1. 음성 파일 load
 w = wave.open(filepath)
 wavLen = w.getnframes() / w.getframerate()
 print("음성의 길이는",wavLen,"초 입니다.")
 wavLenInt = int(wavLen)
+y, sr = librosa.load(filepath, sr=22050) 
 
-y, sr = librosa.load(filepath, sr=22050) #음성 읽기
 
+#2. 음성 파일 4초씩 자르기
 count = 1
 for i in range(0, wavLenInt, 4):
     if((i+4)>wavLen) : break
         
     cutted_y = y[i*22050:(i+4)*22050] #(0~4). (4~8). (8~12)초씩 저장
     
-    sf.write("C:/Users/imreo/face_sentiment_flask/src/dataset/WaveTest/"+"cutted_"+ str(count)+ '.wav', cutted_y, sr, 'PCM_16')
+    sf.write("C:/Users/imreo/gromming-mood-flask/src/dataset/WaveTest/"+"cutted_"+ str(count)+ '.wav', cutted_y, sr, 'PCM_16')
     
     count +=1 
 
 
 
-#자른 음성 파일들 mfcc 특징 벡터 구하기
-folder = "C:/Users/imreo/face_sentiment_flask/src/dataset/WaveTest/"
+#3. 자른 음성 파일들 mfcc 특징 벡터 구하기
+folder = "C:/Users/imreo/gromming-mood-flask/src/dataset/WaveTest/"
 files_list = os.listdir(folder)
 print(files_list)
 
@@ -59,9 +60,9 @@ for file_name in tqdm(files_list):
     mfccs.append(extract_mfcc_feature(join(folder,file_name)))
 
 
-#감정 예측하기
+#4. 분류기로 감정 예측하기
 x_test = np.array(mfccs)
-clf = joblib.load("C:/Users/imreo/face_sentiment_flask/src/model_test.pkl")
+clf = joblib.load("C:/Users/imreo/gromming-mood-flask/src/model_test.pkl")
 predict = clf.predict(x_test)
 
 
@@ -69,7 +70,7 @@ print("predict: ", predict)
 
 UserEmotion = [] #유저의 감정 결과 저장할 list
 
-#유저의 감정 4가지로 변환 (happy, neutral, sad, angry)
+#5. 유저의 감정 4가지로 변환 (happy, neutral, sad, angry)
 for i in predict:
     if i == 'angry': UserEmotion.append(3)
     elif i == 'calm': UserEmotion.append(1)
@@ -81,7 +82,7 @@ for i in predict:
     elif i == 'surprised' : UserEmotion.append(1)
 
 
-#유저의 감정 중 가장 우세한 감정 구하기
+#6. 유저의 감정 중 가장 우세한 감정 구하기
 CntHappy = UserEmotion.count(0)
 CntNeutral = UserEmotion.count(1)
 CntSad = UserEmotion.count(2)

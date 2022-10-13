@@ -26,7 +26,7 @@ def videocapture(filepath):
       break
     if(int(input_video.get(1)) % 60 == 0): #프레임 60 당 이미지 1개 캡쳐
         frame = cv.resize(frame, (48, 48))
-        cv.imwrite("/content/gdrive/MyDrive/CastoneDesign/FrameTest/4%d.jpg" % count, frame) #이미지 저장
+        cv.imwrite("/content/gdrive/MyDrive/CastoneDesign/FrameTest/4%d.jpg" % count, frame) #이미지 저장 경로 바꾸기
         print('Saved frame %d.jpg' %count)
         count +=1
     
@@ -74,7 +74,7 @@ def face_model():
         count = videocapture(file) #프레임 캡쳐 후 캡쳐 이미지 개수 반환
 
         for i in range(count):
-            img = img = "/content/gdrive/MyDrive/CastoneDesign/FrameTest/4"+str(i)+".jpg" #캡쳐본 파일 경로
+            img = img = "/content/gdrive/MyDrive/CastoneDesign/FrameTest/4"+str(i)+".jpg" #캡쳐본 파일 경로 바꾸기
             pred = predfunction(img)
 
             if pred['prob'] > init:
