@@ -8,6 +8,7 @@ import wave, array
 import pickle
 from imutils import paths
 from os.path import join
+from tqdm import tqdm
 
 filepath = "src/dataset/WaveTest/audioTest.wav"
 

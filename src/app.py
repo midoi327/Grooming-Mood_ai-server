@@ -13,6 +13,7 @@ from keras.optimizers import Adam
 import pandas as pd
 from skimage import color
 import tensorflow as tf
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 
@@ -26,7 +27,7 @@ def videocapture(filepath):
       break
     if(int(input_video.get(1)) % 60 == 0): #프레임 60 당 이미지 1개 캡쳐
         frame = cv.resize(frame, (48, 48))
-        cv.imwrite("/content/gdrive/MyDrive/CastoneDesign/FrameTest/4%d.jpg" % count, frame) #이미지 저장 경로 바꾸기
+        cv.imwrite("C:/Users/imreo/gromming-mood-flask/src/dataset/FrameTest/%d.jpg" % count, frame) #캡쳐본 로컬에 저장
         print('Saved frame %d.jpg' %count)
         count +=1
     
@@ -57,13 +58,8 @@ def predfunction(img):
   return result # 0: happy, 1: neutral, 2: sad, 3: angry
 
 
-@app.route("/jsontest", methods=['POST']) #json 주고받기 테스트
-def jsontest():
-    result = request.get_json()
-    return jsonify({result}), 200
-
-
-@app.route("/predict_face", methods=['POST']) # prediction Api
+#표정으로부터 감정 인식 API
+@app.route("/predict_face", methods=['POST']) 
 def face_model():
     if request.method == 'POST':
         count = 0
@@ -71,21 +67,33 @@ def face_model():
         init = 0
 
         file = request.files['video'] #동영상 파일 경로가 있어야함
-        count = videocapture(file) #프레임 캡쳐 후 캡쳐 이미지 개수 반환
+        print("***request 완료***")
+        print("request 된 filename :", file.filename)
+        file.save('src/dataset/'+secure_filename(file.filename)) #동영상을 로컬에 저장
 
+        videofile = "C:/Users/imreo/gromming-mood-flask/src/dataset/" + file.filename #캡처할 비디오 파일 경로
+
+        count = videocapture(videofile) #프레임 캡쳐 후 캡쳐 이미지 개수 반환
+        
         for i in range(count):
-            img = img = "/content/gdrive/MyDrive/CastoneDesign/FrameTest/4"+str(i)+".jpg" #캡쳐본 파일 경로 바꾸기
-            pred = predfunction(img)
+            img = img = "C:/Users/imreo/gromming-mood-flask/src/dataset/FrameTest/"+str(i)+".jpg" #캡쳐본 파일 경로
+            pred = predfunction(img) #캡쳐본의 감정 인식하기
 
-            if pred['prob'] > init:
+            if pred['prob'] > init: #가장 강렬한 감정 선택
                 max_prob = pred['prob']
                 max_index = pred['index']
 
-        maxEmotion['index'] = max_index
-        maxEmotion['prob'] = max_prob
+        maxEmotion['Emotion index'] = max_index
+        maxEmotion['Emotion prob'] = float(max_prob)
+        print(maxEmotion)
 
-    return jsonify(maxEmotion)
+    return jsonify(maxEmotion), 200
 
+#음성으로부터 감정 인식 API
+@app.route("/predict_voice", methods=['POST'])
+def voice_model():
+
+  return jsonify(), 200
 
 
 if __name__ == "__main__":
