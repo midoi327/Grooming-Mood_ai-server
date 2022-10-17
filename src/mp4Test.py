@@ -66,8 +66,8 @@ for i in range(count):
         max_prob = pred['prob']
         max_index = pred['index']
 
-maxEmotion['index'] = max_index
-maxEmotion['prob'] = max_prob
+maxEmotion['Emotion'] = max_index
+maxEmotion['Probability'] = max_prob
 
 
-print("감정 분석 결과: %d번째 감정이 %.2f 확률로 가장 우세합니다." %(maxEmotion['index'],maxEmotion['prob']))
+print("감정 분석 결과: %d번째 감정이 %.2f 확률로 가장 우세합니다." %(maxEmotion['Emotion'],maxEmotion['Probability']))
