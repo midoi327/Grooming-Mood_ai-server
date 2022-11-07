@@ -130,14 +130,14 @@ def pred_voice_emotion(mfccs):
 
 
 
-#----------------------------------------표정 인식 API -------------------------------------------------------------------------
+#----------------------------------------감정 인식 API -------------------------------------------------------------------------
 @app.route("/test", methods=['GET'])
 def test():
   return 1
 
 
-#표정으로부터 감정 인식 API
-@app.route("/predict_face", methods=['POST']) 
+#감정 인식 API
+@app.route("/recog_emotion", methods=['POST']) 
 def face_model():
     if request.method == 'POST':
         count = 0
@@ -150,6 +150,9 @@ def face_model():
         
         videofile = "C:/Users/imreo/gromming-mood-flask/src/dataset/" + file.filename #캡처할 비디오 파일 경로
 
+
+
+        #표정으로부터 감정 인식
         count = videocapture(videofile) #프레임 캡쳐 후 캡쳐 이미지 개수 반환
         
         for i in range(count):
@@ -160,72 +163,55 @@ def face_model():
                 max_prob = pred['prob']
                 max_index = pred['index']
 
-        maxEmotion['Emotion'] = max_index
+
+        #음성으로부터 감정 인식
+      #1. 음성 파일 load
+        wavepath = extract_wav_from_mp4(videofile)
+        w = wave.open(wavepath) 
+        wavLen = w.getnframes() / w.getframerate()
+        print("음성의 길이는",wavLen,"초 입니다.")
+        wavLenInt = int(wavLen)
+        y, sr = librosa.load(wavepath, sr=22050) 
+
+        #2. 음성 파일 4초씩 자르기
+        count = 1
+        for i in range(0, wavLenInt, 4):
+            if((i+4)>wavLen) : break
+            cutted_y = y[i*22050:(i+4)*22050] #(0~4). (4~8). (8~12)초씩 저장
+            sf.write("C:/Users/imreo/gromming-mood-flask/src/dataset/WaveTest/"+"cutted_"+ str(count)+ '.wav', cutted_y, sr, 'PCM_16')
+            count +=1 
+
+
+        #3. 자른 음성 파일들 mfcc 특징 벡터 구하기
+        folder = "C:/Users/imreo/gromming-mood-flask/src/dataset/WaveTest/"
+        files_list = os.listdir(folder)
+        print(files_list)
+
+        mfccs = []
+
+        for file_name in tqdm(files_list):
+          mfccs.append(extract_mfcc_feature(join(folder,file_name)))
+        
+        #4. 분류기로 감정 예측하기
+        UserEmotion = pred_voice_emotion(mfccs)
+        
+        #5. 유저의 감정 중 가장 우세한 감정 구하기
+        CntHappy = UserEmotion.count(0)
+        CntNeutral = UserEmotion.count(1)
+        CntSad = UserEmotion.count(2)
+        CntAngry = UserEmotion.count(3)
+
+        UserMaxEmotion = [CntHappy, CntNeutral, CntSad, CntAngry] #각각 감정 개수
+        VoiceEmotion = np.argmax(UserMaxEmotion) #가장 우세한 음성 감정
+
+
+        # 표정감정, 음성감정, 확률
+        maxEmotion['Face Emotion'] = max_index
+        maxEmotion['Voice Emotion'] = int(VoiceEmotion)
         maxEmotion['Probability'] = float(max_prob)
         print(maxEmotion)
 
     return jsonify(maxEmotion), 200
-
-
-
-#----------------------------------------음성 인식 API -------------------------------------------------------------------------
-#음성으로부터 감정 인식 API
-@app.route("/predict_voice", methods=['POST'])
-def voice_model():
-
-  file = request.files['file'] #동영상 파일 경로가 있어야함
-  file.save('src/dataset/'+secure_filename(file.filename)) #동영상을 로컬에 저장
-
-  #영상 경로
-  videofile = "C:/Users/imreo/gromming-mood-flask/src/dataset/" + file.filename 
-
-  #1. 음성 파일 load
-  wavepath = extract_wav_from_mp4(videofile)
-  w = wave.open(wavepath) 
-  wavLen = w.getnframes() / w.getframerate()
-  print("음성의 길이는",wavLen,"초 입니다.")
-  wavLenInt = int(wavLen)
-  y, sr = librosa.load(wavepath, sr=22050) 
-
-  #2. 음성 파일 4초씩 자르기
-  count = 1
-  for i in range(0, wavLenInt, 4):
-      if((i+4)>wavLen) : break
-      cutted_y = y[i*22050:(i+4)*22050] #(0~4). (4~8). (8~12)초씩 저장
-      sf.write("C:/Users/imreo/gromming-mood-flask/src/dataset/WaveTest/"+"cutted_"+ str(count)+ '.wav', cutted_y, sr, 'PCM_16')
-      count +=1 
-
-
-  #3. 자른 음성 파일들 mfcc 특징 벡터 구하기
-  folder = "C:/Users/imreo/gromming-mood-flask/src/dataset/WaveTest/"
-  files_list = os.listdir(folder)
-  print(files_list)
-
-  mfccs = []
-
-  for file_name in tqdm(files_list):
-    mfccs.append(extract_mfcc_feature(join(folder,file_name)))
-  
-  #4. 분류기로 감정 예측하기
-  UserEmotion = pred_voice_emotion(mfccs)
-  
-  #5. 유저의 감정 중 가장 우세한 감정 구하기
-  CntHappy = UserEmotion.count(0)
-  CntNeutral = UserEmotion.count(1)
-  CntSad = UserEmotion.count(2)
-  CntAngry = UserEmotion.count(3)
-
-  UserMaxEmotion = [CntHappy, CntNeutral, CntSad, CntAngry] #각각 감정 개수
-
-  result = {}
-  Emotion = np.argmax(UserMaxEmotion) #가장 우세한 감정
-
-  result['Emotion'] = int(Emotion) #결과 전달
-  print(result)
-  
-
-  return jsonify(result), 200
-
 
 
 
