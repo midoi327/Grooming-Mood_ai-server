@@ -24,9 +24,11 @@ import moviepy.editor as mp
 from pydub import AudioSegment
 import pydub
 from os.path import join
+from flask_cors import CORS
 
 pydub.AudioSegment.converter= "C:/ffmpeg/ffmpeg/bin/ffmpeg.exe"
 app = Flask(__name__)
+CORS(app)
 #---------------------------------------- 표정 인식에 필요한 함수 -------------------------------------------------------------------------
 
 #표정 인식: 동영상 파일을 변수로 넣으면 60프레임마다 한번씩 캡쳐본을 생성해주는 함수
@@ -129,6 +131,10 @@ def pred_voice_emotion(mfccs):
 
 
 #----------------------------------------표정 인식 API -------------------------------------------------------------------------
+@app.route("/test", methods=['GET'])
+def test():
+  return 1
+
 
 #표정으로부터 감정 인식 API
 @app.route("/predict_face", methods=['POST']) 
@@ -137,10 +143,11 @@ def face_model():
         count = 0
         maxEmotion = {}
         init = 0
+        print("진입완료")
 
-        file = request.files['video'] #동영상 파일 경로가 있어야함
+        file = request.files['file'] #동영상 파일 경로가 있어야함
         file.save('src/dataset/'+secure_filename(file.filename)) #동영상을 로컬에 저장
-
+        
         videofile = "C:/Users/imreo/gromming-mood-flask/src/dataset/" + file.filename #캡처할 비디오 파일 경로
 
         count = videocapture(videofile) #프레임 캡쳐 후 캡쳐 이미지 개수 반환
@@ -166,7 +173,7 @@ def face_model():
 @app.route("/predict_voice", methods=['POST'])
 def voice_model():
 
-  file = request.files['video'] #동영상 파일 경로가 있어야함
+  file = request.files['file'] #동영상 파일 경로가 있어야함
   file.save('src/dataset/'+secure_filename(file.filename)) #동영상을 로컬에 저장
 
   #영상 경로
@@ -225,4 +232,4 @@ def voice_model():
 #---------------------------------------flask api 실행 --------------------------------------------------------------------
 if __name__ == "__main__":
 
-    app.run()
+    app.run(host='0.0.0.0')
