@@ -10,6 +10,7 @@ import cv2 as cv
 from keras.models import Sequential
 from keras.layers import  Conv2D, MaxPooling2D, Flatten, Dense, Dropout
 from keras.optimizers import Adam
+from keras.models import load_model
 import pandas as pd
 from skimage import color
 import tensorflow as tf
@@ -55,7 +56,7 @@ def predfunction(img):
   img = color.rgb2gray(img)
   img = img.reshape(-1, 48, 48, 1)
 
-  model = tf.keras.models.load_model('C:/Users/imreo/gromming-mood-flask/src/cpu_face_model.h5')
+  model = load_model('C:/Users/imreo/gromming-mood-flask/src/cpu_face_model.h5')
   prediction = model.predict(img)
 
   result['prob'] = max(max(prediction))
@@ -106,26 +107,40 @@ def extract_mfcc_feature(file_name):
     return mfcc_feature
 
 #음성 인식: mfcc로부터 감정을 예측하는 함수
-def pred_voice_emotion(mfccs):
+def pred_voice_emotion(mfccs, count):
     x_test = np.array(mfccs)
-    clf = joblib.load("C:/Users/imreo/gromming-mood-flask/src/model_test.pkl")
-    predict = clf.predict(x_test)
-    print("predict: ", predict)
+    clf = joblib.load("C:/Users/imreo/gromming-mood-flask/src/voice_svm_model.pkl")
     
-    UserEmotion = [] #유저의 감정 결과 저장할 list
+    predict = []
+    maxProb = 0
+    userEmotion = 1
 
-    #5. 유저의 감정 4가지로 변환 (happy, neutral, sad, angry)
-    for i in predict:
-        if i == 'angry': UserEmotion.append(3)
-        elif i == 'calm': UserEmotion.append(1)
-        elif i == 'disgust': UserEmotion.append(3)
-        elif i == 'fearful' : UserEmotion.append(1)
-        elif i == 'happy' : UserEmotion.append(0)
-        elif i == 'neutral' : UserEmotion.append(1)
-        elif i == 'sad' : UserEmotion.append(2)
-        elif i == 'surprised' : UserEmotion.append(1)
+
+    predict = clf.predict_proba(x_test) 
+    print(predict)
+    #라벨 ( angry, calm, disgust, fearful, happy, neutral, sad, surprised)
+    for i in range(0, count-1):
+        pred = predict[i] #i번째 파일
+        for w in range(0,7): #0~7 감정 확률 
+            prob = pred[w] # i번째 음성파일 w번째 음성
+            if prob > maxProb:
+                maxProb = prob
+                userEmotion = w #가장 강렬한 감정
+
+    #유저의 감정 4가지로 변환 (happy, neutral, sad, angry)
+
+    if userEmotion == 0: UserEmotion = 3
+    elif userEmotion == 1: UserEmotion = 1
+    elif userEmotion == 2: UserEmotion= 3
+    elif userEmotion == 3 : UserEmotion= 1
+    elif userEmotion == 4 : UserEmotion= 0
+    elif userEmotion == 5 : UserEmotion= 1
+    elif userEmotion == 6 : UserEmotion = 2
+    elif userEmotion == 7 : UserEmotion= 1
     
-    return UserEmotion # ex) [0,1,0,3,2] 
+    print("UseEmotion, maxProb : %d, %.3f" %(UserEmotion,maxProb))
+
+    return [UserEmotion, maxProb]
 
 
 
@@ -193,22 +208,16 @@ def face_model():
           mfccs.append(extract_mfcc_feature(join(folder,file_name)))
         
         #4. 분류기로 감정 예측하기
-        UserEmotion = pred_voice_emotion(mfccs)
-        
-        #5. 유저의 감정 중 가장 우세한 감정 구하기
-        CntHappy = UserEmotion.count(0)
-        CntNeutral = UserEmotion.count(1)
-        CntSad = UserEmotion.count(2)
-        CntAngry = UserEmotion.count(3)
+        [UserEmotion, maxProb] = pred_voice_emotion(mfccs)
+      
 
-        UserMaxEmotion = [CntHappy, CntNeutral, CntSad, CntAngry] #각각 감정 개수
-        VoiceEmotion = np.argmax(UserMaxEmotion) #가장 우세한 음성 감정
 
 
         # 표정감정, 음성감정, 확률
         maxEmotion['Face Emotion'] = max_index
-        maxEmotion['Voice Emotion'] = int(VoiceEmotion)
-        maxEmotion['Probability'] = float(max_prob)
+        maxEmotion['Voice Emotion'] = UserEmotion
+        maxEmotion['Face Prob'] = float(max_prob)
+        maxEmotion['Voice Prob'] = float(maxProb)
         print(maxEmotion)
 
     return jsonify(maxEmotion), 200
