@@ -208,7 +208,7 @@ def face_model():
           mfccs.append(extract_mfcc_feature(join(folder,file_name)))
         
         #4. 분류기로 감정 예측하기
-        [UserEmotion, maxProb] = pred_voice_emotion(mfccs)
+        [UserEmotion, maxProb] = pred_voice_emotion(mfccs, count)
       
 
 
