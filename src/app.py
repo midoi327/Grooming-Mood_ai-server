@@ -42,7 +42,7 @@ def videocapture(filepath):
       break
     if(int(input_video.get(1)) % 60 == 0): #프레임 60 당 이미지 1개 캡쳐
         frame = cv.resize(frame, (48, 48))
-        cv.imwrite("C:/Users/imreo/gromming-mood-flask/src/dataset/FrameTest/%d.jpg" % count, frame) #캡쳐본 로컬에 저장
+        cv.imwrite("src/dataset/FrameTest/%d.jpg" % count, frame) #캡쳐본 로컬에 저장
         print('Saved frame %d.jpg' %count)
         count +=1
     
@@ -56,7 +56,7 @@ def predfunction(img):
   img = color.rgb2gray(img)
   img = img.reshape(-1, 48, 48, 1)
 
-  model = load_model('C:/Users/imreo/gromming-mood-flask/src/cpu_face_model.h5')
+  model = load_model('src/cpu_face_model.h5')
   prediction = model.predict(img)
 
   result['prob'] = max(max(prediction))
@@ -81,7 +81,7 @@ def extract_wav_from_mp4(file_name):
     file = mp.VideoFileClip(file_name)
     file.audio.write_audiofile("src/dataset/AudioMp3.mp3") #mp4를 mp3로 추출
     
-    src = "C:/Users/imreo/gromming-mood-flask/src/dataset/AudioMp3.mp3"
+    src = "src/dataset/AudioMp3.mp3"
     dst="src/dataset/AudioWav.wav"
 
     audSeg = pydub.AudioSegment.from_mp3(src)
@@ -109,7 +109,7 @@ def extract_mfcc_feature(file_name):
 #음성 인식: mfcc로부터 감정을 예측하는 함수
 def pred_voice_emotion(mfccs, count):
     x_test = np.array(mfccs)
-    clf = joblib.load("C:/Users/imreo/gromming-mood-flask/src/voice_svm_model.pkl")
+    clf = joblib.load("src/voice_svm_model.pkl")
     
     predict = []
     maxProb = 0
@@ -163,7 +163,7 @@ def face_model():
         file = request.files['file'] #동영상 파일 경로가 있어야함
         file.save('src/dataset/'+secure_filename(file.filename)) #동영상을 로컬에 저장
         
-        videofile = "C:/Users/imreo/gromming-mood-flask/src/dataset/" + file.filename #캡처할 비디오 파일 경로
+        videofile = "src/dataset/" + file.filename #캡처할 비디오 파일 경로
 
 
 
@@ -171,7 +171,7 @@ def face_model():
         count = videocapture(videofile) #프레임 캡쳐 후 캡쳐 이미지 개수 반환
         
         for i in range(count):
-            img = img = "C:/Users/imreo/gromming-mood-flask/src/dataset/FrameTest/"+str(i)+".jpg" #캡쳐본 파일 경로
+            img = img = "src/dataset/FrameTest/"+str(i)+".jpg" #캡쳐본 파일 경로
             pred = predfunction(img) #캡쳐본의 감정 인식하기
 
             if pred['prob'] > init: #가장 강렬한 감정 선택
@@ -193,12 +193,12 @@ def face_model():
         for i in range(0, wavLenInt, 4):
             if((i+4)>wavLen) : break
             cutted_y = y[i*22050:(i+4)*22050] #(0~4). (4~8). (8~12)초씩 저장
-            sf.write("C:/Users/imreo/gromming-mood-flask/src/dataset/WaveTest/"+"cutted_"+ str(count)+ '.wav', cutted_y, sr, 'PCM_16')
+            sf.write("src/dataset/WaveTest/"+"cutted_"+ str(count)+ '.wav', cutted_y, sr, 'PCM_16')
             count +=1 
 
 
         #3. 자른 음성 파일들 mfcc 특징 벡터 구하기
-        folder = "C:/Users/imreo/gromming-mood-flask/src/dataset/WaveTest/"
+        folder = "src/dataset/WaveTest/"
         files_list = os.listdir(folder)
         print(files_list)
 
