@@ -13,10 +13,11 @@ import moviepy.editor as mp
 from pydub import AudioSegment
 import pydub
 import pandas as pd
+from sklearn.preprocessing import MinMaxScaler
 
 pydub.AudioSegment.converter= "C:/ffmpeg/ffmpeg/bin/ffmpeg.exe"
 
-filepath = "src/dataset/FaceTest.mp4" #받아온 웹캠 영상
+filepath = "C:/Users/imreo/gromming-mood-flask/src/dataset/HappyFace.mp4" #받아온 웹캠 영상
 
 #mp4 파일로부터 wav 추출하는 함수
 def extract_wav_from_mp4(file_name):
@@ -60,8 +61,12 @@ def pred_voice_emotion(mfccs, count):
     maxProb = 0
     userEmotion = 1
 
+    scaler = MinMaxScaler()
+    scaler.fit(mfccs)
+    mfccs_scaled = scaler.transform(mfccs)
 
-    predict = clf.predict_proba(x_test) 
+    predict = clf.predict_proba(mfccs_scaled) 
+    print(x_test)
     print(predict)
     #라벨 ( angry, calm, disgust, fearful, happy, neutral, sad, surprised)
     for i in range(0, count-1):
