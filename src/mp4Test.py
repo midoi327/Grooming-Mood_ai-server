@@ -12,6 +12,7 @@ from skimage import color
 
 #동영상 파일을 변수로 넣으면 60프레임마다 한번씩 캡쳐본을 생성해주는 함수
 def videocapture(filepath): 
+  print("videocapture 진입")
   input_video = cv.VideoCapture(filepath)
   count = 0
   while(input_video.isOpened()):
@@ -25,10 +26,12 @@ def videocapture(filepath):
         count +=1
     
   input_video.release()
+  print("count는",count)
   return count #캡쳐본 이미지 개수 반환 
 
 #이미지를 변수로 넣으면 가장 우세한 감정과 확률을 구해주는 함수
 def predfunction(img): 
+  print("predfunction 진입")
   result = {}
   img = cv.imread(img)
   img = color.rgb2gray(img)
@@ -55,7 +58,7 @@ count = 0
 maxEmotion = {}
 init = 0
 
-file = "C:/Users/imreo/gromming-mood-flask/src/dataset/Facetest.mp4"  #동영상 파일 경로가 있어야함
+file = "C:/Users/imreo/gromming-mood-flask/src/dataset/happy7.mp4"  #동영상 파일 경로가 있어야함
 count = videocapture(file) #프레임 캡쳐 후 캡쳐 이미지 개수 반환
 
 for i in range(count):
