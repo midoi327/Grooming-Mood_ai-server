@@ -26,6 +26,12 @@ from pydub import AudioSegment
 import pydub
 from os.path import join
 from flask_cors import CORS
+from urllib import parse
+from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
+from flask import g
+from sklearn.preprocessing import MinMaxScaler
+
 
 pydub.AudioSegment.converter= "C:/ffmpeg/ffmpeg/bin/ffmpeg.exe"
 app = Flask(__name__)
@@ -115,8 +121,11 @@ def pred_voice_emotion(mfccs, count):
     maxProb = 0
     userEmotion = 1
 
+    scaler = MinMaxScaler()
+    scaler.fit(mfccs)
+    mfccs_scaled = scaler.transform(mfccs)
 
-    predict = clf.predict_proba(x_test) 
+    predict = clf.predict_proba(mfccs_scaled) 
     print(predict)
     #라벨 ( angry, calm, disgust, fearful, happy, neutral, sad, surprised)
     for i in range(0, count-1):
@@ -155,6 +164,10 @@ def test():
 @app.route("/recog_emotion", methods=['POST']) 
 def face_model():
     if request.method == 'POST':
+      if 'file' not in request.files:
+        return 'File is missing', 404
+
+      else:
         count = 0
         maxEmotion = {}
         init = 0
@@ -221,6 +234,46 @@ def face_model():
         print(maxEmotion)
 
     return jsonify(maxEmotion), 200
+
+
+
+
+#---------------------------------------챗봇 api --------------------------------------------------------------------
+
+
+#챗봇 api
+
+@app.route("/chatbot", methods=['POST'])
+def chatbot():
+  if request.method == 'POST':
+    args = request.json #입력값 받기
+    string = args['userChatMessage']
+    string = parse.unquote(string, 'utf8') #문자열 인코딩
+    print("입력 메세지:", string)
+    
+    model = SentenceTransformer('jhgan/ko-sroberta-multitask')
+    df = pd.read_csv('src/wellness_dataset.csv')
+    df['embedding'] = pd.Series([[]]*len(df))
+    df['embedding'] = df['유저'].map(lambda x: list(model.encode(x)))
+    print("encode끝")
+    
+    embedding = model.encode(string)
+
+    df['distance'] = df['embedding'].map(lambda x: cosine_similarity([embedding], [x]).squeeze())
+    answer = df.loc[df['distance'].idxmax()]
+
+    print('구분', answer['구분']) 
+    print('유사한 질문', answer['유저'])
+    print('챗봇 답변', answer['챗봇']) # 챗봇 적용 시 이 것만 필요
+    print('유사도', answer['distance']) 
+
+    return answer['챗봇']
+
+
+
+
+
+
 
 
 
